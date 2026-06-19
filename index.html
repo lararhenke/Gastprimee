@@ -2,12 +2,10 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-<title>Gaston</title>
+<title>Gastprimee</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-    * {
-        box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
         margin: 0;
@@ -67,6 +65,9 @@ let keys = {};
 let gameState = "start";
 let cameraX = 0;
 let coinsCollected = 0;
+let score = 0;
+let currentLevel = 0;
+let explosions = [];
 
 const gravity = 0.55;
 const friction = 0.82;
@@ -82,84 +83,193 @@ const player = {
     maxSpeed: 5.2,
     jump: -13,
     onGround: false,
-    lives: 3,
+    lives: 5,
     hurtTimer: 0
 };
 
-const startX = 80;
-const startY = 300;
-
-const platforms = [
-    {x: 0, y: 490, w: 900, h: 50},
-    {x: 980, y: 490, w: 700, h: 50},
-    {x: 1780, y: 490, w: 850, h: 50},
-    {x: 2700, y: 490, w: 900, h: 50},
-
-    {x: 260, y: 400, w: 160, h: 24},
-    {x: 520, y: 335, w: 150, h: 24},
-    {x: 820, y: 380, w: 140, h: 24},
-    {x: 1120, y: 405, w: 170, h: 24},
-    {x: 1440, y: 340, w: 160, h: 24},
-    {x: 1880, y: 385, w: 180, h: 24},
-    {x: 2220, y: 325, w: 160, h: 24},
-    {x: 2520, y: 405, w: 190, h: 24},
-    {x: 2920, y: 360, w: 160, h: 24},
-    {x: 3250, y: 310, w: 200, h: 24}
+const levels = [
+    {
+        name: "Bana 1",
+        theme: "Kullen",
+        startX: 80,
+        startY: 300,
+        cameraMax: 2800,
+        platforms: [
+            {x: 0, y: 490, w: 900, h: 50},
+            {x: 980, y: 490, w: 700, h: 50},
+            {x: 1780, y: 490, w: 850, h: 50},
+            {x: 2700, y: 490, w: 900, h: 50},
+            {x: 260, y: 400, w: 160, h: 24},
+            {x: 520, y: 335, w: 150, h: 24},
+            {x: 820, y: 380, w: 140, h: 24},
+            {x: 1120, y: 405, w: 170, h: 24},
+            {x: 1440, y: 340, w: 160, h: 24},
+            {x: 1880, y: 385, w: 180, h: 24},
+            {x: 2220, y: 325, w: 160, h: 24},
+            {x: 2520, y: 405, w: 190, h: 24},
+            {x: 2920, y: 360, w: 160, h: 24},
+            {x: 3250, y: 310, w: 200, h: 24}
+        ],
+        coins: [
+            {x: 300, y: 360}, {x: 560, y: 295}, {x: 870, y: 340},
+            {x: 1160, y: 365}, {x: 1490, y: 300}, {x: 1930, y: 345},
+            {x: 2270, y: 285}, {x: 2570, y: 365}, {x: 2970, y: 320},
+            {x: 3320, y: 270}
+        ],
+        enemies: [
+            {x: 680, y: 454, w: 36, h: 36, vx: 1.3, min: 610, max: 850},
+            {x: 1320, y: 454, w: 36, h: 36, vx: 1.5, min: 1100, max: 1620},
+            {x: 2050, y: 454, w: 36, h: 36, vx: 1.6, min: 1850, max: 2500}
+        ],
+        boss: null,
+        goal: {x: 3500, y: 370, w: 35, h: 120}
+    },
+    {
+        name: "Bana 2",
+        theme: "Ravinen",
+        startX: 80,
+        startY: 300,
+        cameraMax: 3400,
+        platforms: [
+            {x: 0, y: 490, w: 700, h: 50},
+            {x: 860, y: 490, w: 420, h: 50},
+            {x: 1450, y: 490, w: 500, h: 50},
+            {x: 2120, y: 490, w: 430, h: 50},
+            {x: 2700, y: 490, w: 480, h: 50},
+            {x: 3350, y: 490, w: 600, h: 50},
+            {x: 310, y: 390, w: 130, h: 24},
+            {x: 610, y: 330, w: 120, h: 24},
+            {x: 980, y: 380, w: 115, h: 24},
+            {x: 1270, y: 315, w: 130, h: 24},
+            {x: 1650, y: 385, w: 120, h: 24},
+            {x: 1970, y: 320, w: 125, h: 24},
+            {x: 2320, y: 385, w: 125, h: 24},
+            {x: 2580, y: 310, w: 110, h: 24},
+            {x: 2970, y: 370, w: 130, h: 24},
+            {x: 3260, y: 300, w: 130, h: 24},
+            {x: 3600, y: 360, w: 160, h: 24}
+        ],
+        coins: [
+            {x: 345, y: 350}, {x: 645, y: 290}, {x: 1010, y: 340},
+            {x: 1310, y: 275}, {x: 1690, y: 345}, {x: 2010, y: 280},
+            {x: 2360, y: 345}, {x: 2610, y: 270}, {x: 3010, y: 330},
+            {x: 3310, y: 260}, {x: 3650, y: 320}
+        ],
+        enemies: [
+            {x: 520, y: 454, w: 36, h: 36, vx: 1.7, min: 120, max: 640},
+            {x: 1520, y: 454, w: 36, h: 36, vx: 1.9, min: 1460, max: 1900},
+            {x: 2220, y: 454, w: 36, h: 36, vx: 2.0, min: 2130, max: 2500},
+            {x: 2850, y: 454, w: 36, h: 36, vx: 2.1, min: 2710, max: 3140},
+            {x: 3450, y: 454, w: 36, h: 36, vx: 2.2, min: 3360, max: 3900}
+        ],
+        boss: null,
+        goal: {x: 3850, y: 370, w: 35, h: 120}
+    },
+    {
+        name: "Bana 3",
+        theme: "Borås mot Godzilla",
+        startX: 80,
+        startY: 300,
+        cameraMax: 3900,
+        platforms: [
+            {x: 0, y: 490, w: 520, h: 50},
+            {x: 700, y: 490, w: 360, h: 50},
+            {x: 1250, y: 490, w: 320, h: 50},
+            {x: 1760, y: 490, w: 320, h: 50},
+            {x: 2280, y: 490, w: 300, h: 50},
+            {x: 2780, y: 490, w: 330, h: 50},
+            {x: 3350, y: 490, w: 300, h: 50},
+            {x: 3900, y: 490, w: 600, h: 50},
+            {x: 260, y: 370, w: 105, h: 24},
+            {x: 540, y: 300, w: 100, h: 24},
+            {x: 830, y: 360, w: 95, h: 24},
+            {x: 1110, y: 285, w: 100, h: 24},
+            {x: 1410, y: 365, w: 95, h: 24},
+            {x: 1660, y: 300, w: 95, h: 24},
+            {x: 1980, y: 360, w: 95, h: 24},
+            {x: 2200, y: 280, w: 90, h: 24},
+            {x: 2520, y: 355, w: 90, h: 24},
+            {x: 2740, y: 270, w: 90, h: 24},
+            {x: 3050, y: 355, w: 90, h: 24},
+            {x: 3300, y: 280, w: 90, h: 24},
+            {x: 3620, y: 350, w: 90, h: 24},
+            {x: 3880, y: 270, w: 120, h: 24},
+            {x: 4160, y: 360, w: 150, h: 24}
+        ],
+        coins: [
+            {x: 285, y: 330}, {x: 565, y: 260}, {x: 850, y: 320},
+            {x: 1140, y: 245}, {x: 1435, y: 325}, {x: 1685, y: 260},
+            {x: 2010, y: 320}, {x: 2225, y: 240}, {x: 2545, y: 315},
+            {x: 2765, y: 230}, {x: 3075, y: 315}, {x: 3325, y: 240},
+            {x: 3645, y: 310}, {x: 3915, y: 230}, {x: 4200, y: 320}
+        ],
+        enemies: [
+            {x: 400, y: 454, w: 36, h: 36, vx: 2.0, min: 120, max: 500},
+            {x: 780, y: 454, w: 36, h: 36, vx: 2.2, min: 710, max: 1020},
+            {x: 1320, y: 454, w: 36, h: 36, vx: 2.3, min: 1260, max: 1530},
+            {x: 1840, y: 454, w: 36, h: 36, vx: 2.4, min: 1770, max: 2050},
+            {x: 2350, y: 454, w: 36, h: 36, vx: 2.5, min: 2290, max: 2550},
+            {x: 2860, y: 454, w: 36, h: 36, vx: 2.6, min: 2790, max: 3090}
+        ],
+        boss: {x: 4010, y: 350, w: 100, h: 140, vx: 1.4, min: 3900, max: 4320, hits: 3, hurtTimer: 0, dead: false},
+        goal: {x: 4380, y: 370, w: 35, h: 120}
+    }
 ];
 
-const coins = [
-    {x: 300, y: 360, taken: false},
-    {x: 560, y: 295, taken: false},
-    {x: 870, y: 340, taken: false},
-    {x: 1160, y: 365, taken: false},
-    {x: 1490, y: 300, taken: false},
-    {x: 1930, y: 345, taken: false},
-    {x: 2270, y: 285, taken: false},
-    {x: 2570, y: 365, taken: false},
-    {x: 2970, y: 320, taken: false},
-    {x: 3320, y: 270, taken: false}
-];
-
-const enemies = [
-    {x: 680, y: 454, w: 36, h: 36, vx: 1.3, min: 610, max: 850},
-    {x: 1320, y: 454, w: 36, h: 36, vx: 1.5, min: 1100, max: 1620},
-    {x: 2050, y: 454, w: 36, h: 36, vx: 1.6, min: 1850, max: 2500},
-    {x: 3050, y: 454, w: 36, h: 36, vx: 1.8, min: 2800, max: 3520}
-];
-
-const goal = {x: 3500, y: 370, w: 35, h: 120};
+let platforms = [];
+let coins = [];
+let enemies = [];
+let boss = null;
+let goal = {};
 
 document.addEventListener("keydown", e => {
     keys[e.key.toLowerCase()] = true;
 
-    if (gameState === "start" && (e.key === "Enter" || e.key === " ")) {
-        gameState = "play";
-    }
-
-    if (e.key.toLowerCase() === "r") {
-        resetGame();
-    }
+    if (gameState === "start" && (e.key === "Enter" || e.key === " ")) gameState = "play";
+    if (gameState === "levelclear" && (e.key === "Enter" || e.key === " ")) nextLevel();
+    if (e.key.toLowerCase() === "r") resetGame();
 });
 
 document.addEventListener("keyup", e => {
     keys[e.key.toLowerCase()] = false;
 });
 
-function resetGame() {
-    player.x = startX;
-    player.y = startY;
+function loadLevel(index) {
+    const level = levels[index];
+
+    platforms = level.platforms.map(p => ({...p}));
+    coins = level.coins.map(c => ({...c, taken: false}));
+    enemies = level.enemies.map(e => ({...e, dead: false}));
+    boss = level.boss ? {...level.boss} : null;
+    goal = {...level.goal};
+    explosions = [];
+
+    player.x = level.startX;
+    player.y = level.startY;
     player.vx = 0;
     player.vy = 0;
-    player.lives = 3;
     player.hurtTimer = 0;
     cameraX = 0;
     coinsCollected = 0;
-    coins.forEach(c => c.taken = false);
-    enemies[0].x = 680;
-    enemies[1].x = 1320;
-    enemies[2].x = 2050;
-    enemies[3].x = 3050;
+}
+
+function resetGame() {
+    currentLevel = 0;
+    score = 0;
+    player.lives = 5;
+    loadLevel(currentLevel);
     gameState = "start";
+}
+
+function nextLevel() {
+    currentLevel++;
+
+    if (currentLevel >= levels.length) {
+        gameState = "win";
+    } else {
+        loadLevel(currentLevel);
+        gameState = "play";
+    }
 }
 
 function rectsOverlap(a, b) {
@@ -167,6 +277,33 @@ function rectsOverlap(a, b) {
            a.x + a.w > b.x &&
            a.y < b.y + b.h &&
            a.y + a.h > b.y;
+}
+
+function createExplosion(x, y, big = false) {
+    const amount = big ? 28 : 14;
+
+    for (let i = 0; i < amount; i++) {
+        explosions.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * (big ? 9 : 6),
+            vy: (Math.random() - 0.8) * (big ? 8 : 5),
+            life: big ? 42 : 26,
+            maxLife: big ? 42 : 26,
+            size: big ? 5 + Math.random() * 8 : 3 + Math.random() * 5
+        });
+    }
+}
+
+function updateExplosions() {
+    for (const ex of explosions) {
+        ex.x += ex.vx;
+        ex.y += ex.vy;
+        ex.vy += 0.18;
+        ex.life--;
+    }
+
+    explosions = explosions.filter(ex => ex.life > 0);
 }
 
 function updatePlayer() {
@@ -205,28 +342,52 @@ function updatePlayer() {
         }
     }
 
-    if (player.y > H + 150) {
-        loseLife();
-    }
-
+    if (player.y > H + 150) loseLife();
     if (player.hurtTimer > 0) player.hurtTimer--;
 }
 
 function updateEnemies() {
     for (const e of enemies) {
-        e.x += e.vx;
+        if (e.dead) continue;
 
-        if (e.x < e.min || e.x > e.max) {
-            e.vx *= -1;
-        }
+        e.x += e.vx;
+        if (e.x < e.min || e.x > e.max) e.vx *= -1;
 
         if (rectsOverlap(player, e) && player.hurtTimer <= 0) {
             if (player.vy > 0 && player.y + player.h < e.y + 18) {
-                e.x = -9999;
+                e.dead = true;
                 player.vy = -9;
+                score += 250;
+                createExplosion(e.x + e.w / 2, e.y + e.h / 2, false);
             } else {
                 loseLife();
             }
+        }
+    }
+}
+
+function updateBoss() {
+    if (!boss || boss.dead) return;
+
+    boss.x += boss.vx;
+    if (boss.x < boss.min || boss.x > boss.max) boss.vx *= -1;
+    if (boss.hurtTimer > 0) boss.hurtTimer--;
+
+    if (rectsOverlap(player, boss) && player.hurtTimer <= 0) {
+        if (player.vy > 0 && player.y + player.h < boss.y + 38) {
+            boss.hits--;
+            boss.hurtTimer = 45;
+            player.vy = -12;
+            score += 500;
+            createExplosion(player.x + player.w / 2, boss.y + 10, false);
+
+            if (boss.hits <= 0) {
+                boss.dead = true;
+                score += 2000;
+                createExplosion(boss.x + boss.w / 2, boss.y + boss.h / 2, true);
+            }
+        } else {
+            loseLife();
         }
     }
 }
@@ -238,6 +399,7 @@ function updateCoins() {
             if (rectsOverlap(player, coinRect)) {
                 c.taken = true;
                 coinsCollected++;
+                score += 100;
             }
         }
     }
@@ -245,37 +407,47 @@ function updateCoins() {
 
 function loseLife() {
     player.lives--;
-    player.x = Math.max(startX, player.x - 180);
-    player.y = startY;
+    const level = levels[currentLevel];
+
+    player.x = Math.max(level.startX, player.x - 180);
+    player.y = level.startY;
     player.vx = 0;
     player.vy = 0;
     player.hurtTimer = 90;
 
-    if (player.lives <= 0) {
-        gameState = "gameover";
-    }
+    if (player.lives <= 0) gameState = "gameover";
 }
 
 function updateCamera() {
+    const level = levels[currentLevel];
     cameraX = player.x - W * 0.35;
     if (cameraX < 0) cameraX = 0;
-    if (cameraX > 2800) cameraX = 2800;
+    if (cameraX > level.cameraMax) cameraX = level.cameraMax;
 }
 
 function checkGoal() {
+    if (currentLevel === 2 && boss && !boss.dead) return;
+
     if (rectsOverlap(player, goal)) {
-        gameState = "win";
+        score += 1000 + player.lives * 200;
+        if (currentLevel === levels.length - 1) {
+            gameState = "win";
+        } else {
+            gameState = "levelclear";
+        }
     }
 }
 
 function drawBackground() {
     const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, "#7dd3fc");
-    sky.addColorStop(1, "#dbeafe");
+    sky.addColorStop(0, currentLevel === 2 ? "#6366f1" : "#7dd3fc");
+    sky.addColorStop(1, currentLevel === 2 ? "#1e1b4b" : "#dbeafe");
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
 
-    ctx.fillStyle = "#bae6fd";
+    drawBorasSkyline();
+
+    ctx.fillStyle = currentLevel === 2 ? "rgba(255,255,255,0.18)" : "#bae6fd";
     for (let i = 0; i < 12; i++) {
         let x = (i * 360 - cameraX * 0.25) % 1400;
         if (x < -200) x += 1400;
@@ -285,25 +457,56 @@ function drawBackground() {
         ctx.arc(x + 85, 95 + (i % 3) * 35, 30, 0, Math.PI * 2);
         ctx.fill();
     }
+}
 
-    ctx.fillStyle = "#0f766e";
-    for (let i = 0; i < 20; i++) {
-        let x = i * 240 - cameraX * 0.45;
+function drawBorasSkyline() {
+    const baseY = 470;
+    const offset = -cameraX * 0.18;
+
+    ctx.fillStyle = currentLevel === 2 ? "rgba(15,23,42,0.72)" : "rgba(30,64,175,0.30)";
+
+    const buildings = [
+        {x: 40, w: 90, h: 135}, {x: 150, w: 70, h: 95}, {x: 245, w: 115, h: 150},
+        {x: 390, w: 60, h: 110}, {x: 485, w: 125, h: 165}, {x: 640, w: 80, h: 120},
+        {x: 760, w: 135, h: 175}, {x: 930, w: 75, h: 115}, {x: 1040, w: 120, h: 145},
+        {x: 1200, w: 65, h: 105}, {x: 1305, w: 150, h: 185}
+    ];
+
+    for (let copy = -1; copy < 5; copy++) {
+        for (const b of buildings) {
+            const x = b.x + copy * 1500 + offset;
+            ctx.fillRect(x, baseY - b.h, b.w, b.h);
+
+            ctx.fillStyle = currentLevel === 2 ? "rgba(250,204,21,0.45)" : "rgba(255,255,255,0.45)";
+            for (let wx = x + 12; wx < x + b.w - 10; wx += 24) {
+                for (let wy = baseY - b.h + 18; wy < baseY - 15; wy += 28) {
+                    ctx.fillRect(wx, wy, 8, 10);
+                }
+            }
+            ctx.fillStyle = currentLevel === 2 ? "rgba(15,23,42,0.72)" : "rgba(30,64,175,0.30)";
+        }
+
+        const towerX = 610 + copy * 1500 + offset;
+        ctx.fillRect(towerX, baseY - 225, 34, 225);
         ctx.beginPath();
-        ctx.moveTo(x, 490);
-        ctx.lineTo(x + 160, 230 + (i % 4) * 30);
-        ctx.lineTo(x + 320, 490);
+        ctx.moveTo(towerX - 22, baseY - 225);
+        ctx.lineTo(towerX + 17, baseY - 285);
+        ctx.lineTo(towerX + 56, baseY - 225);
         ctx.closePath();
         ctx.fill();
+
+        const textX = 735 + copy * 1500 + offset;
+        ctx.font = "bold 30px Arial";
+        ctx.fillText("BORÅS", textX, baseY - 210);
     }
 }
 
 function drawPlatforms() {
     for (const p of platforms) {
-        ctx.fillStyle = "#92400e";
+        ctx.fillStyle = currentLevel === 2 ? "#3f3f46" : "#92400e";
         ctx.fillRect(p.x - cameraX, p.y, p.w, p.h);
 
-        ctx.fillStyle = "#22c55e";
+        ctx.fillStyle = currentLevel === 2 ? "#a78bfa" : "#22c55e";
         ctx.fillRect(p.x - cameraX, p.y, p.w, 10);
 
         ctx.fillStyle = "rgba(0,0,0,0.18)";
@@ -353,7 +556,7 @@ function drawCoins() {
 
 function drawEnemies() {
     for (const e of enemies) {
-        if (e.x < -1000) continue;
+        if (e.dead) continue;
 
         const x = e.x - cameraX;
         ctx.fillStyle = "#7f1d1d";
@@ -372,48 +575,129 @@ function drawEnemies() {
     }
 }
 
+function drawBoss() {
+    if (!boss || boss.dead) return;
+
+    const x = boss.x - cameraX;
+    const y = boss.y;
+
+    if (boss.hurtTimer > 0 && Math.floor(boss.hurtTimer / 5) % 2 === 0) {
+        ctx.fillStyle = "#fca5a5";
+    } else {
+        ctx.fillStyle = "#166534";
+    }
+
+    ctx.fillRect(x + 20, y + 45, 62, 95);
+    ctx.fillRect(x + 28, y + 10, 55, 50);
+
+    ctx.fillStyle = "#14532d";
+    ctx.fillRect(x + 5, y + 68, 22, 20);
+    ctx.fillRect(x + 72, y + 68, 30, 20);
+    ctx.fillRect(x + 30, y + 132, 20, 18);
+    ctx.fillRect(x + 58, y + 132, 20, 18);
+
+    ctx.fillStyle = "#bbf7d0";
+    for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.moveTo(x + 30 + i * 10, y + 45);
+        ctx.lineTo(x + 35 + i * 10, y + 25);
+        ctx.lineTo(x + 40 + i * 10, y + 45);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    ctx.fillStyle = "#020617";
+    ctx.fillRect(x + 43, y + 28, 6, 6);
+    ctx.fillRect(x + 65, y + 28, 6, 6);
+
+    ctx.fillStyle = "#ef4444";
+    ctx.fillRect(x + 47, y + 45, 22, 5);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 16px Arial";
+    ctx.fillText("GODZILLA", x + 8, y - 12);
+
+    ctx.fillStyle = "#dc2626";
+    ctx.fillRect(x + 12, y - 6, 78, 6);
+
+    ctx.fillStyle = "#22c55e";
+    ctx.fillRect(x + 12, y - 6, 26 * boss.hits, 6);
+}
+
+function drawExplosions() {
+    for (const ex of explosions) {
+        const alpha = ex.life / ex.maxLife;
+        const x = ex.x - cameraX;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = alpha > 0.5 ? "#facc15" : "#f97316";
+        ctx.fillRect(x, ex.y, ex.size, ex.size);
+    }
+    ctx.globalAlpha = 1;
+}
+
 function drawGoal() {
     const x = goal.x - cameraX;
 
     ctx.fillStyle = "#1f2937";
     ctx.fillRect(x, goal.y, 8, goal.h);
 
-    ctx.fillStyle = "#f97316";
-    ctx.fillRect(x + 8, goal.y + 5, 80, 42);
+    if (currentLevel === 2 && boss && !boss.dead) {
+        ctx.fillStyle = "#64748b";
+        ctx.fillRect(x + 8, goal.y + 5, 100, 42);
 
-    ctx.fillStyle = "#fed7aa";
-    ctx.font = "bold 18px Arial";
-    ctx.fillText("MÅL", x + 25, goal.y + 32);
+        ctx.fillStyle = "#e2e8f0";
+        ctx.font = "bold 14px Arial";
+        ctx.fillText("BESEGRA", x + 18, goal.y + 23);
+        ctx.fillText("GODZILLA", x + 18, goal.y + 39);
+    } else {
+        ctx.fillStyle = "#f97316";
+        ctx.fillRect(x + 8, goal.y + 5, 80, 42);
+
+        ctx.fillStyle = "#fed7aa";
+        ctx.font = "bold 18px Arial";
+        ctx.fillText("MÅL", x + 25, goal.y + 32);
+    }
 }
 
 function drawHud() {
-    ctx.fillStyle = "rgba(15,23,42,0.72)";
-    ctx.fillRect(18, 18, 260, 48);
+    ctx.fillStyle = "rgba(15,23,42,0.78)";
+    ctx.fillRect(18, 18, 610, 52);
 
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 22px Arial";
-    ctx.fillText("GASTON", 34, 50);
+    ctx.fillText("GASTPRIMEE", 34, 52);
 
     ctx.font = "18px Arial";
-    ctx.fillText("Mynt: " + coinsCollected + "/" + coins.length, 145, 50);
-    ctx.fillText("Liv: " + player.lives, 250, 50);
+    ctx.fillText("Bana: " + (currentLevel + 1) + "/3", 185, 52);
+    ctx.fillText("Poäng: " + score, 295, 52);
+    ctx.fillText("Liv: " + player.lives, 430, 52);
+    ctx.fillText("Mynt: " + coinsCollected + "/" + coins.length, 495, 52);
+
+    if (boss && !boss.dead) {
+        ctx.fillStyle = "#fef3c7";
+        ctx.fillText("Godzilla: " + boss.hits + "/3", 34, 88);
+    }
 }
 
 function drawCenteredScreen(title, text, smallText) {
-    ctx.fillStyle = "rgba(2,6,23,0.82)";
+    ctx.fillStyle = "rgba(2,6,23,0.84)";
     ctx.fillRect(0, 0, W, H);
 
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
-    ctx.font = "bold 72px Arial";
-    ctx.fillText(title, W / 2, 190);
+    ctx.font = "bold 68px Arial";
+    ctx.fillText(title, W / 2, 165);
 
     ctx.font = "24px Arial";
-    ctx.fillText(text, W / 2, 255);
+    ctx.fillText(text, W / 2, 230);
+
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "#fbbf24";
+    ctx.fillText("En ripoff av Super Mario Broes", W / 2, 270);
 
     ctx.font = "18px Arial";
     ctx.fillStyle = "#cbd5e1";
-    ctx.fillText(smallText, W / 2, 305);
+    ctx.fillText(smallText, W / 2, 320);
 
     ctx.textAlign = "left";
 }
@@ -422,9 +706,13 @@ function update() {
     if (gameState === "play") {
         updatePlayer();
         updateEnemies();
+        updateBoss();
         updateCoins();
+        updateExplosions();
         updateCamera();
         checkGoal();
+    } else {
+        updateExplosions();
     }
 }
 
@@ -433,20 +721,26 @@ function draw() {
     drawPlatforms();
     drawCoins();
     drawEnemies();
+    drawBoss();
     drawGoal();
     drawPlayer();
+    drawExplosions();
     drawHud();
 
     if (gameState === "start") {
-        drawCenteredScreen("GASTON", "Ett enkelt plattformsspel", "Tryck ENTER eller SPACE för att börja");
+        drawCenteredScreen("GASTPRIMEE", "Ett enkelt plattformsspel i tre banor", "Tryck ENTER eller SPACE för att börja");
+    }
+
+    if (gameState === "levelclear") {
+        drawCenteredScreen("BANA " + (currentLevel + 1) + " KLARAD", "Nästa bana blir svårare", "Tryck ENTER eller SPACE för att fortsätta");
     }
 
     if (gameState === "gameover") {
-        drawCenteredScreen("GAME OVER", "Gaston förlorade alla liv", "Tryck R för att starta om");
+        drawCenteredScreen("GAME OVER", "Gastprimee förlorade alla liv", "Tryck R för att starta om");
     }
 
     if (gameState === "win") {
-        drawCenteredScreen("BANA KLARAD", "Gaston nådde målet och samlade " + coinsCollected + " mynt", "Tryck R för att spela igen");
+        drawCenteredScreen("SPELET KLARAT", "Slutpoäng: " + score, "Tryck R för att spela igen");
     }
 }
 
@@ -456,6 +750,7 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
+resetGame();
 loop();
 </script>
 
